@@ -79,3 +79,55 @@ def test_parallel_resistance_rejects_wrong_value():
 
     assert result["passed"] is False
     assert result["verified_by"] == "symbolic"
+def test_verifier_accepts_mcq_answer_key_match():
+    question = {
+        "number": "5",
+        "type": "mcq",
+        "text": "The ___ guarded his territory fiercely.",
+        "options": {
+            "A": "lioness",
+            "B": "lion",
+            "C": "tiger",
+            "D": "tigress",
+        },
+    }
+
+    solution = {
+        "answer": "B. lion",
+    }
+
+    result = verify_solution(
+        question,
+        solution,
+        expected_answer="B",
+    )
+
+    assert result["passed"] is True
+    assert result["verified_by"] == "answer_key"
+
+
+def test_verifier_rejects_mcq_answer_key_mismatch():
+    question = {
+        "number": "5",
+        "type": "mcq",
+        "text": "The ___ guarded his territory fiercely.",
+        "options": {
+            "A": "lioness",
+            "B": "lion",
+            "C": "tiger",
+            "D": "tigress",
+        },
+    }
+
+    solution = {
+        "answer": "C. tiger",
+    }
+
+    result = verify_solution(
+        question,
+        solution,
+        expected_answer="B",
+    )
+
+    assert result["passed"] is False
+    assert result["verified_by"] == "answer_key"

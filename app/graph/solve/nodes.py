@@ -51,9 +51,10 @@ def verify_node(state: SolveState) -> SolveState:
     solution = state["solution"]
 
     verification = verify_solution(
-        question,
-        solution,
-    )
+    question,
+    solution,
+    expected_answer=state.get("expected_answer"),
+)
 
     return {
         **state,
