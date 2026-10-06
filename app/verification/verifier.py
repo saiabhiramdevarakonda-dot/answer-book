@@ -37,32 +37,55 @@ def verify_solution(
                 "verified_by": "none",
             }
 
-        expected_option = _extract_option(expected_answer)
-        generated_option = _extract_option(answer)
+        options = question.get("options", {})
 
-        if expected_option is None or generated_option is None:
+        if not isinstance(options, dict):
             return {
                 "passed": False,
-                "reason": "Could not identify an MCQ option in the answer or answer key.",
+                "reason": "MCQ options are missing or have an invalid format.",
                 "verified_by": "answer_key",
             }
 
-        if generated_option == expected_option:
+        expected_option = expected_answer.strip().upper()
+
+        if expected_option not in options:
+            return {
+                "passed": False,
+                "reason": (
+                    f"Answer key option {expected_option} was not found "
+                    "in the extracted question options."
+                ),
+                "verified_by": "answer_key",
+            }
+
+        expected_text = str(options[expected_option]).strip().lower()
+        generated_answer = answer.strip().lower()
+
+        option_matches = (
+            generated_answer == expected_option.lower()
+            or generated_answer.startswith(f"{expected_option.lower()}.")
+            or generated_answer.startswith(f"{expected_option.lower()})")
+            or generated_answer == expected_text
+        )
+
+        if option_matches:
             return {
                 "passed": True,
-                "reason": f"Generated option {generated_option} matches the answer key.",
+                "reason": (
+                    f"Generated answer matches answer key option "
+                    f"{expected_option}."
+                ),
                 "verified_by": "answer_key",
             }
 
         return {
             "passed": False,
             "reason": (
-                f"Generated option {generated_option} does not match "
-                f"the answer key option {expected_option}."
+                f"Generated answer does not match answer key option "
+                f"{expected_option}."
             ),
             "verified_by": "answer_key",
         }
-
     if question_type in {"short", "long", "diagram"}:
         return {
             "passed": True,
@@ -75,23 +98,6 @@ def verify_solution(
         "reason": "Unsupported question type.",
         "verified_by": "none",
     }
-
-
-def _extract_option(text: str) -> str | None:
-    """
-    Extract an MCQ option label from formats such as:
-    'B', 'B. lion', '(B)', or 'Option B'.
-    """
-
-    match = re.match(
-        r"^\s*(?:option\s*)?[\(\[]?([A-D])(?:[\)\].:\s]|$)",
-        text.upper(),
-    )
-
-    if match:
-        return match.group(1)
-
-    return None
 
 
 def _verify_numerical(

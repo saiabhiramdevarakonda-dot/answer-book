@@ -51,13 +51,27 @@ def verify_node(state: SolveState) -> SolveState:
     solution = state["solution"]
 
     verification = verify_solution(
-    question,
-    solution,
-    expected_answer=state.get("expected_answer"),
-)
+        question,
+        solution,
+        expected_answer=state.get("expected_answer"),
+    )
+
+    verified_by = verification.get("verified_by", "none")
+
+    needs_teacher_check = (
+        verification.get("passed") is not True
+        or verified_by == "none"
+    )
+
+    updated_solution = {
+        **solution,
+        "verified_by": verified_by,
+        "needs_teacher_check": needs_teacher_check,
+    }
 
     return {
         **state,
+        "solution": updated_solution,
         "verification": verification,
     }
 

@@ -166,6 +166,8 @@ def test_solve_graph_retries_when_verification_fails(monkeypatch):
     assert result["retry_count"] == 1
     assert result["solution"]["answer"] == "4 ohm"
     assert result["verification"]["passed"] is True
+
+
 def test_generate_node_passes_retry_reason(monkeypatch):
     captured = {}
 
@@ -255,6 +257,8 @@ def test_route_node_for_unsupported_question():
     result = route_node(state)
 
     assert result["route"] == "unsupported"
+
+
 def test_solve_graph_records_question_route(monkeypatch):
     fake_response = """
     {
@@ -308,3 +312,84 @@ def test_solve_graph_records_question_route(monkeypatch):
 
     assert result["route"] == "numerical"
     assert result["verification"]["passed"] is True
+
+
+def test_verify_node_marks_verified_solution_without_teacher_check():
+    state = {
+        "question": {
+            "number": "3(b)",
+            "text": "Calculate the resistance of 6 ohm and 12 ohm resistors in parallel.",
+            "marks": 3,
+            "type": "numerical",
+        },
+        "solution": {
+            "question_number": "3(b)",
+            "answer": "4 ohm",
+            "steps": [],
+            "mark_split": [],
+            "common_mistakes": [],
+            "confidence": 0.0,
+            "verified_by": "none",
+            "needs_teacher_check": True,
+        },
+    }
+
+    result = verify_node(state)
+
+    assert result["verification"]["passed"] is True
+    assert result["solution"]["verified_by"] == "symbolic"
+    assert result["solution"]["needs_teacher_check"] is False
+
+
+def test_verify_node_requires_teacher_check_without_independent_verification():
+    state = {
+        "question": {
+            "number": "1",
+            "text": "What is the capital of France?",
+            "marks": 1,
+            "type": "mcq",
+        },
+        "solution": {
+            "question_number": "1",
+            "answer": "Paris",
+            "steps": [],
+            "mark_split": [],
+            "common_mistakes": [],
+            "confidence": 0.0,
+            "verified_by": "none",
+            "needs_teacher_check": True,
+        },
+    }
+
+    result = verify_node(state)
+
+    assert result["verification"]["passed"] is True
+    assert result["solution"]["verified_by"] == "none"
+    assert result["solution"]["needs_teacher_check"] is True
+
+
+def test_verify_node_requires_teacher_check_when_verification_fails():
+    state = {
+        "question": {
+            "number": "3(b)",
+            "text": "Calculate the resistance of 6 ohm and 12 ohm resistors in parallel.",
+            "marks": 3,
+            "type": "numerical",
+        },
+        "solution": {
+            "question_number": "3(b)",
+            "answer": "18 ohm",
+            "steps": [],
+            "mark_split": [],
+            "common_mistakes": [],
+            "confidence": 0.0,
+            "verified_by": "none",
+            "needs_teacher_check": True,
+        },
+    }
+
+    result = verify_node(state)
+
+    assert result["verification"]["passed"] is False
+    assert result["solution"]["verified_by"] == "symbolic"
+    assert result["solution"]["needs_teacher_check"] is True

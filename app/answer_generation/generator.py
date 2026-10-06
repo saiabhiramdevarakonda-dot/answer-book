@@ -84,7 +84,7 @@ Rules:
 - Do not guess when the question does not contain enough information.
 """
 
-    if question_type not in {"mcq", "short", "numerical"}:
+    if question_type not in {"mcq", "short", "numerical", "long", "diagram"}:
         solution = GeneratedSolution(
             answer="Unsupported question type.",
             steps=[],
