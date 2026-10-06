@@ -393,3 +393,55 @@ def test_verify_node_requires_teacher_check_when_verification_fails():
     assert result["verification"]["passed"] is False
     assert result["solution"]["verified_by"] == "symbolic"
     assert result["solution"]["needs_teacher_check"] is True
+
+def test_solve_graph_verifies_mcq_with_answer_key(monkeypatch):
+    fake_response = """
+    {
+        "answer": "B. lion",
+        "steps": [
+            "Identify the subject described in the sentence.",
+            "The correct word is lion."
+        ],
+        "mark_split": [
+            {
+                "marks": 1,
+                "for": "Correct option"
+            }
+        ],
+        "common_mistakes": []
+    }
+    """
+
+    monkeypatch.setattr(
+        GeminiProvider,
+        "generate",
+        lambda self, prompt: fake_response,
+    )
+
+    graph = build_solve_graph()
+
+    question = {
+        "number": "5",
+        "text": "The ___ guarded his territory fiercely.",
+        "marks": 1,
+        "type": "mcq",
+        "options": {
+            "A": "lioness",
+            "B": "lion",
+            "C": "tiger",
+            "D": "tigress",
+        },
+    }
+
+    result = graph.invoke(
+        {
+            "question": question,
+            "expected_answer": "B",
+        }
+    )
+
+    assert result["route"] == "mcq"
+    assert result["solution"]["answer"] == "B. lion"
+    assert result["verification"]["passed"] is True
+    assert result["solution"]["verified_by"] == "answer_key"
+    assert result["solution"]["needs_teacher_check"] is False
