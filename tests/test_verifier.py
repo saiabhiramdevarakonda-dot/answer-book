@@ -180,3 +180,25 @@ def test_verifier_rejects_mcq_answer_key_mismatch():
 
     assert result["passed"] is False
     assert result["verified_by"] == "answer_key"
+
+def test_verifier_does_not_pass_mcq_without_answer_key():
+    question = {
+        "number": "6",
+        "type": "mcq",
+        "text": "Which planet is known as the Red Planet?",
+        "options": {
+            "A": "Earth",
+            "B": "Mars",
+            "C": "Venus",
+            "D": "Jupiter",
+        },
+    }
+
+    solution = {
+        "answer": "B. Mars",
+    }
+
+    result = verify_solution(question, solution)
+
+    assert result["passed"] is False
+    assert result["verified_by"] == "none"

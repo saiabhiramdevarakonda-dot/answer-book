@@ -363,7 +363,7 @@ def test_verify_node_requires_teacher_check_without_independent_verification():
 
     result = verify_node(state)
 
-    assert result["verification"]["passed"] is True
+    assert result["verification"]["passed"] is False
     assert result["solution"]["verified_by"] == "none"
     assert result["solution"]["needs_teacher_check"] is True
 
