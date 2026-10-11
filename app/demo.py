@@ -296,7 +296,7 @@ def main():
         raise SystemExit(1)
 
     print("\n" + "=" * 65)
-    print(f"ANSWER BOOK DEMO — PAPER {paper_id}")
+    print(f"ANSWER BOOK DEMO -- PAPER {paper_id}")
     print("=" * 65)
 
     try:
@@ -355,7 +355,7 @@ def main():
         expected = answer_key.get(number) if is_mcq else None
 
         print("\n" + "-" * 65)
-        print(f"QUESTION {index}/{len(questions)} — Q{number}")
+        print(f"QUESTION {index}/{len(questions)} -- Q{number}")
         print(f"Type: {question['type']} | Marks: {question['marks']}")
         print("-" * 65)
         print(question["text"])
@@ -365,7 +365,7 @@ def main():
                 print(f"  ({letter}) {option_text}")
 
             if expected is None:
-                print("Status: NOT VERIFIED — answer-key entry missing")
+                print("Status: NOT VERIFIED -- answer-key entry missing")
                 print("Teacher review required: YES")
                 missing_key_count += 1
                 teacher_review_count += 1
@@ -429,7 +429,7 @@ def main():
 
             elif verifier_passed:
                 if method == "llm_rubric":
-                    print("Status: PASS — LLM RUBRIC EVALUATION")
+                    print("Status: PASS -- LLM RUBRIC EVALUATION")
                 else:
                     print("Status: PASS")
 
