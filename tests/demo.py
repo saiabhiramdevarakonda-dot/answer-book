@@ -1,4 +1,15 @@
+"""
+Command-line demo for the answer-book solve-and-verify workflow.
 
+Loads a question paper and its official answer key, runs the solve graph,
+and displays generated answers, verification results, retry information,
+and teacher-review flags. The answer key supplies expected MCQ answers
+for verification; it is not intended to be shown to the answer generator.
+
+Run from the repository root:
+    python -m tests.demo PAPER_NUMBER
+    python -m tests.demo PAPER_NUMBER QUESTION_NUMBER
+"""
 import re
 import sys
 from pathlib import Path
@@ -180,6 +191,7 @@ def extract_mcqs(pdf_text, target_question=None):
     return questions
 
 
+
 def parse_descriptive(header, block):
     """Convert one Section B question into the graph's question format."""
     lines = block.splitlines()
@@ -210,7 +222,7 @@ def parse_descriptive(header, block):
             f"Question {header.group(1)} has no readable text."
         )
 
-    # Prefer explicit mark annotations when present.
+    # Detect explicit mark annotations first.
     mark_match = re.search(
         r"(?:\[(\d+)\s*marks?\]"
         r"|\((\d+)\s*marks?\)"
@@ -219,11 +231,17 @@ def parse_descriptive(header, block):
         re.IGNORECASE,
     )
 
-    marks = (
-        int(next(group for group in mark_match.groups() if group))
-        if mark_match
-        else 2
-    )
+    if mark_match:
+        marks = int(next(group for group in mark_match.groups() if group))
+        text = (text[:mark_match.start()] + text[mark_match.end():]).strip()
+    else:
+        # In this paper format, a trailing standalone number may indicate marks.
+        trailing_number = re.search(r"\s+(\d+)\s*$", text)
+        if trailing_number:
+            marks = int(trailing_number.group(1))
+            text = text[:trailing_number.start()].strip()
+        else:
+            marks = 2
 
     question_type = "short" if marks <= 2 else "long"
 
@@ -240,6 +258,7 @@ def parse_descriptive(header, block):
         "page": None,
         "choice_group": "OR" if re.search(r"\bOR\b", text, re.I) else None,
     }
+
 
 
 def extract_descriptive_question(pdf_text, target_question):
@@ -267,8 +286,8 @@ def extract_descriptive_question(pdf_text, target_question):
 def main():
     if len(sys.argv) not in (2, 3) or not sys.argv[1].isdigit():
         print("Usage:")
-        print("  python -m app.demo PAPER_NUMBER")
-        print("  python -m app.demo PAPER_NUMBER QUESTION_NUMBER")
+        print("  python -m tests.demo PAPER_NUMBER")
+        print("  python -m tests.demo PAPER_NUMBER QUESTION_NUMBER")
         raise SystemExit(2)
 
     paper_id = sys.argv[1]
