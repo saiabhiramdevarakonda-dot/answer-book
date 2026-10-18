@@ -1,7 +1,11 @@
+
 fastapi
-uvicorn 
+uvicorn
 pypdf
-pillow 
-openai 
+pillow
+openai
 pydantic
 groq
+langgraph
+langchain-core
+langchain-groq
