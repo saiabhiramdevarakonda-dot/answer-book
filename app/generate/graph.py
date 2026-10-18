@@ -1,6 +1,7 @@
 """LangGraph Question Solve Engine: solver, verification, and bounded retry loop."""
 
 from typing import Any, Dict
+import time
 
 from langgraph.graph import END, START, StateGraph
 
@@ -137,5 +138,10 @@ def solve_question(
     if question_data.get("expected_answer") is not None:
         initial_state["expected_answer"] = str(question_data["expected_answer"])
 
+    started = time.perf_counter()
     final_state = question_solver_graph.invoke(initial_state)
+    elapsed = time.perf_counter() - started
+
+
+
     return final_state["solution"]

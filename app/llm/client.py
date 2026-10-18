@@ -52,7 +52,14 @@ def call_groq_json(system_prompt: str, user_prompt: str, max_retries: int = 3) -
 
     for attempt in range(max_retries):
         try:
+            request_started = time.perf_counter()
             response = client.invoke(messages)
+            elapsed = time.perf_counter() - request_started
+
+            print(
+                 f"[Groq latency] attempt={attempt + 1} "
+                 f"duration={elapsed:.2f}s"
+                 )
             content_text = _clean_json_text(str(response.content))
             return json.loads(content_text)
         except Exception as exc:

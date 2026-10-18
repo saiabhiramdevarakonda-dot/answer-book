@@ -10,6 +10,7 @@ context. Descriptive questions are evaluated by the configured verifier.
 
 import re
 import sys
+import time
 from pathlib import Path
 from unittest.mock import patch
 
@@ -44,7 +45,7 @@ def get_section(pdf_text, section_name, next_section=None):
 
 
 def find_question_headers(section_text, minimum, maximum=None):
-    """Find numbered question headers."""
+    """Find numbered question headers at the start of lines."""
     pattern = re.compile(r"(?m)^\s*(\d{1,3})[.)]?\s+(\S.*)$")
     headers = []
     for match in pattern.finditer(section_text):
@@ -67,6 +68,13 @@ def get_question_block(section_text, headers, target_number):
     raise ValueError(f"Question {target_number} was not found in its section.")
 
 
+def _is_end_marker(line):
+    return bool(
+        re.match(r"^\s*\[?\s*Choices?\b", line, re.IGNORECASE)
+        or re.match(r"^\s*Page\s+\d+", line, re.IGNORECASE)
+    )
+
+
 def parse_mcq(header, block):
     """Parse a numbered MCQ and its A-D options."""
     lines = block.splitlines()
@@ -78,23 +86,21 @@ def parse_mcq(header, block):
         stripped = line.strip()
         if not stripped:
             continue
-        if re.match(r"^\[Ch\s", stripped, re.IGNORECASE):
-            break
-        if re.match(r"^Page\s+\d+", stripped, re.IGNORECASE):
+        if _is_end_marker(stripped):
             break
         if re.fullmatch(r"\d+", stripped):
             continue
 
-        option_match = re.match(r"^\(([A-D])\)\s*(.*)$", stripped)
+        option_match = re.match(r"^\(?([A-D])\)?[.)]?\s+(.+)$", stripped)
         if option_match:
             current_option = option_match.group(1)
             options[current_option] = option_match.group(2).strip()
-        elif current_option and stripped:
+        elif current_option:
             options[current_option] += " " + stripped
         else:
             question_lines.append(stripped)
 
-    if len(options) != 4:
+    if len(options) != 4 or set(options) != {"A", "B", "C", "D"}:
         raise ValueError(f"Q{header.group(1)} did not yield exactly four MCQ options.")
 
     question_text = " ".join(question_lines).strip()
@@ -147,9 +153,7 @@ def parse_descriptive(header, block):
         stripped = line.strip()
         if not stripped:
             continue
-        if re.match(r"^\[Ch\s", stripped, re.IGNORECASE):
-            break
-        if re.match(r"^Page\s+\d+", stripped, re.IGNORECASE):
+        if _is_end_marker(stripped):
             break
         if re.fullmatch(r"\d+", stripped):
             continue
@@ -160,7 +164,7 @@ def parse_descriptive(header, block):
         raise ValueError(f"Question {header.group(1)} has no readable text.")
 
     mark_match = re.search(
-        r"(?:\[(\d+)\s*marks?\]|\((\d+)\s*marks?\)|(\d+)\s*marks?\b)",
+        r"(?:\[(\d+)\s*marks?\]|\((\d+)\s*marks?\)|\b(\d+)\s*marks?\b)",
         text,
         re.IGNORECASE,
     )
@@ -288,7 +292,7 @@ def main():
     passed_count = failed_count = unverified_count = 0
     generation_error_count = missing_key_count = teacher_review_count = 0
 
-    # Bypass cached answers so the demo actually tests the current generation pipeline.
+    # Bypass cached answers so the demo tests the current generation pipeline.
     cache_bypass = patch("app.generate.nodes.planner.lookup_cached_question", return_value=None)
     cache_bypass.start()
     try:
@@ -327,7 +331,11 @@ def main():
                 graph_input["expected_answer"] = expected
 
             try:
+                started = time.perf_counter()
                 result = question_solver_graph.invoke(graph_input)
+                elapsed = time.perf_counter() - started
+                print(f"[Graph latency] Q{graph_input.get('number', '?')} duration={elapsed:.2f}s")
+
                 solution = result.get("solution", {}) or {}
                 verification = result.get("verification", {}) or {}
                 method = verification.get("verified_by", "none")
@@ -348,7 +356,9 @@ def main():
                     print("\nMark split:")
                     for item in mark_split:
                         if isinstance(item, dict):
-                            print(f"  {item.get('marks', '?')} marks: {item.get('for_', item.get('for', ''))}")
+                            item_marks = item.get("marks", "?")
+                            item_for = item.get("for_", item.get("for", ""))
+                            print(f"  {item_marks} marks: {item_for}")
                         else:
                             print(f"  {item}")
 
