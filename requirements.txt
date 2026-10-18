@@ -9,3 +9,5 @@ groq
 langgraph
 langchain-core
 langchain-groq
+python-dotenv
+SQLAlchemy
