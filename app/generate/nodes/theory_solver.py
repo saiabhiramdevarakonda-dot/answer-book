@@ -14,6 +14,12 @@ def theory_solver_node(state: QuestionState) -> Dict[str, Any]:
     subject = metadata.get("subject", "Science / Mathematics")
     grade = metadata.get("class", "Class 9")
     board = metadata.get("board", "CBSE")
+    retry_reason = str(state.get("retry_reason") or "").strip()
+    retry_section = (
+        "\nPrevious candidate failed verification. Recheck the answer and correct this issue:\n" + retry_reason
+        if retry_reason
+        else ""
+    )
 
     system_prompt = f"""You are a senior {board} {subject} examiner for {grade} students.
 Your goal is to provide a complete, clear, and structured answer for this descriptive question.
@@ -33,6 +39,7 @@ Follow these strict rules:
 Total Marks: {marks}
 Question:
 {text}
+{retry_section}
 
 Output JSON Schema:
 {{

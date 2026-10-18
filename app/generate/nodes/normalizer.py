@@ -57,11 +57,21 @@ def normalizer_node(state: QuestionState) -> Dict[str, Any]:
     except (ValueError, TypeError):
         confidence = 0.90
 
-    # 6. Verified By (frozen contract: 'symbolic' | 'retrieval' | 'none')
-    verified_by = "none"
+    # 6. Preserve the verifier's result only when verification passed.
+    verification = state.get("verification") or {}
+    if verification.get("passed"):
+        verified_by = str(verification.get("verified_by") or "none")
+    else:
+        verified_by = "none"
 
-    # 7. Needs Teacher Check (boolean: True if confidence < 0.70)
-    needs_teacher_check = bool(raw.get("needs_teacher_check", confidence < 0.70))
+    # 7. Failed verification always requires teacher review.
+    needs_teacher_check = (
+        not verification.get("passed", False)
+        or bool(verification.get("needs_teacher_check", True))
+        or bool(raw.get("needs_teacher_check", False))
+        or confidence < 0.70
+    )
+
 
     # Assemble final contract dictionary
     solution: SolutionContract = {

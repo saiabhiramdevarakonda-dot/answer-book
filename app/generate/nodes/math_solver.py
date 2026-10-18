@@ -14,6 +14,12 @@ def math_solver_node(state: QuestionState) -> Dict[str, Any]:
     subject = metadata.get("subject", "Mathematics")
     grade = metadata.get("class", "Class 9")
     board = metadata.get("board", "CBSE")
+    retry_reason = str(state.get("retry_reason") or "").strip()
+    retry_section = (
+        "\nPrevious candidate failed verification. Recheck the reasoning and correct this issue:\n" + retry_reason
+        if retry_reason
+        else ""
+    )
 
     system_prompt = f"""You are a master {board} {subject} teacher for {grade} students.
 Your goal is to provide a complete, mathematically rigorous, step-by-step solution for the numerical question.
@@ -33,6 +39,7 @@ Follow these strict rules:
 Total Marks: {marks}
 Question:
 {text}
+{retry_section}
 
 Output JSON Schema:
 {{

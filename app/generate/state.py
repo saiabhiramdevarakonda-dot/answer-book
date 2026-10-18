@@ -57,7 +57,10 @@ class QuestionState(TypedDict, total=False):
     # 2. Intermediate Variables (set by internal graph nodes)
     selected_route: str       # "math" | "mcq" | "theory" | "cached" (decided by Planner)
     raw_solution: Optional[Dict[str, Any]]  # Raw output from the specialized solver
-
+    verification: Optional[Dict[str, Any]]
+    expected_answer: Optional[str]
+    retry_count: int
+    retry_reason: Optional[str]
     # 3. Final Normalized Output
     solution: Optional[SolutionContract]    # Sanitized final object matching API contract
 
